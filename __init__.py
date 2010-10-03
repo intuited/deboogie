@@ -101,25 +101,20 @@ def tracewrap(fmt=pformat, log=get_debug_logger('tracewrap')):
      ('simply_wrapped_func arg 1', 'simply_wrapped_func arg 2'),
      {'wfkw1': 'wrapped_func kwarg 1'})
 
-    >>> fmt=lambda data: pformat(('lambda-formatted', data))
+    The format function can be used to process the data:
+    >>> #fmt=lambda data: pformat(('lambda-formatted', data))
+    >>> fmt=lambda data: (('first positional argument', data[1][1][0])
+    ...                   if data[0] == '->' else None)
     >>> def printlog(*args, **kwargs):
-    ...     print args[0]
+    ...     if args[0]:
+    ...         print 'Example call trace: ', args[0]
     >>> @tracewrap(fmt, printlog)
     ... def wrapped_func(*wa, **wk):
     ...     return ('wrapped_func returning (wa, wk)', wa, wk)
     >>> ret = wrapped_func('wrapped_func arg 1', 'wrapped_func arg 2',
     ...                    wfkw1='wrapped_func kwarg 1')
     ... # doctest: +ELLIPSIS
-    ('lambda-formatted',
-     ('->',
-      (('function', <function wrapped_func at 0x...>),
-       ('args', ('wrapped_func arg 1', 'wrapped_func arg 2')),
-       ('kwargs', {'wfkw1': 'wrapped_func kwarg 1'}))))
-    ('lambda-formatted',
-     ('<-',
-      ('wrapped_func returning (wa, wk)',
-       ('wrapped_func arg 1', 'wrapped_func arg 2'),
-       {'wfkw1': 'wrapped_func kwarg 1'})))
+    Example call trace:  ('first positional argument', 'args')
     >>> pprint(ret)
     ('wrapped_func returning (wa, wk)',
      ('wrapped_func arg 1', 'wrapped_func arg 2'),
