@@ -1,7 +1,13 @@
 """Tools to git deboogie on."""
 
 def get_debug_logger(name, strm=None):
-    """Creates a basic debug logger with prettyprint capabilities.
+    """Creates a basic debug log function with prettyprint capabilities.
+
+    A basic logger is created.
+    The logger's ``debug`` method is returned.
+    The logger itself is returned as ``return.logger``.
+    The handler is returned as ``return.handler``.
+    A pretty-printing version of the log function is returned as ``return.pp``.
 
     >>> from sys import stdout
     >>> debug = get_debug_logger('boogie', strm=stdout)
