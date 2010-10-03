@@ -1,4 +1,6 @@
 """Tools to git deboogie on."""
+from pprint import pformat
+from sys import stdout
 
 def get_debug_logger(name, strm=None):
     """Creates a basic debug log function with prettyprint capabilities.
@@ -60,3 +62,76 @@ def iterdebug(name, it, stringifier=str, strm=None):
     for i in iter(it):
         debug(stringifier(i))
         yield i
+
+def tracewrap(fmt=pformat, log=get_debug_logger('tracewrap')):
+    """Decorator factory to log function inputs and outputs.
+
+    >>> # We want to catch the default output of this function,
+    >>> # which is directed to standard error.
+    >>> import sys
+    >>> sys.stderr = sys.stdout
+
+    >>> # Since this function has a reference to the real standard error,
+    >>> # we need to reload the module and re-import its names.
+    >>> # This will allow doctest to catch its output.
+    >>> import deboogie
+    >>> reload(deboogie) # doctest: +ELLIPSIS
+    <module 'deboogie'...>
+    >>> from deboogie import *
+
+    >>> from pprint import pprint
+
+    >>> @tracewrap()
+    ... def simply_wrapped_func(*wa, **wk):
+    ...     return ('simply_wrapped_func returning (wa, wk)', wa, wk)
+    >>> ret = simply_wrapped_func('simply_wrapped_func arg 1',
+    ...                           'simply_wrapped_func arg 2',
+    ...                           wfkw1='wrapped_func kwarg 1')
+    ... # doctest: +ELLIPSIS
+    ('->',
+     (('function', <function simply_wrapped_func at 0x...>),
+      ('args', ('simply_wrapped_func arg 1', 'simply_wrapped_func arg 2')),
+      ('kwargs', {'wfkw1': 'wrapped_func kwarg 1'})))
+    ('<-',
+     ('simply_wrapped_func returning (wa, wk)',
+      ('simply_wrapped_func arg 1', 'simply_wrapped_func arg 2'),
+      {'wfkw1': 'wrapped_func kwarg 1'}))
+    >>> pprint(ret)
+    ('simply_wrapped_func returning (wa, wk)',
+     ('simply_wrapped_func arg 1', 'simply_wrapped_func arg 2'),
+     {'wfkw1': 'wrapped_func kwarg 1'})
+
+    >>> fmt=lambda data: pformat(('lambda-formatted', data))
+    >>> def printlog(*args, **kwargs):
+    ...     print args[0]
+    >>> @tracewrap(fmt, printlog)
+    ... def wrapped_func(*wa, **wk):
+    ...     return ('wrapped_func returning (wa, wk)', wa, wk)
+    >>> ret = wrapped_func('wrapped_func arg 1', 'wrapped_func arg 2',
+    ...                    wfkw1='wrapped_func kwarg 1')
+    ... # doctest: +ELLIPSIS
+    ('lambda-formatted',
+     ('->',
+      (('function', <function wrapped_func at 0x...>),
+       ('args', ('wrapped_func arg 1', 'wrapped_func arg 2')),
+       ('kwargs', {'wfkw1': 'wrapped_func kwarg 1'}))))
+    ('lambda-formatted',
+     ('<-',
+      ('wrapped_func returning (wa, wk)',
+       ('wrapped_func arg 1', 'wrapped_func arg 2'),
+       {'wfkw1': 'wrapped_func kwarg 1'})))
+    >>> pprint(ret)
+    ('wrapped_func returning (wa, wk)',
+     ('wrapped_func arg 1', 'wrapped_func arg 2'),
+     {'wfkw1': 'wrapped_func kwarg 1'})
+    """
+    def tracer(f):
+        def trace(*args, **kwargs):
+            log(fmt(('->',
+                    (('function', f),
+                     ('args', args), ('kwargs', kwargs)))))
+            ret = f(*args, **kwargs)
+            log(fmt(('<-', ret)))
+            return ret
+        return trace
+    return tracer
