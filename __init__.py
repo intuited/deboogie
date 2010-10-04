@@ -55,6 +55,7 @@ def get_null_logger(name):
     from StringIO import StringIO
     return get_debug_logger(name, null_stream)
 null_log = get_null_logger('null')
+null_log.__name__ = 'null_log'
 
 
 # expanded version of iterrabble.iterlog
@@ -85,12 +86,15 @@ def tuplabel(name, f=None):
     return label
 
 # The default logger for tracewrap-produced decorators.
-tracewrap_log = get_debug_logger('tracewrap')
-null_fmt = lambda *a, **k: None
+default_log = get_debug_logger('tracewrap')
+default_log.__name__ = 'default_log'
+
+def null_fmt(*a, **k):
+    return None
 
 def tracewrap(infmt=lambda a: pformat(tuplabel('->')(a)),
               outfmt=lambda a: pformat(tuplabel('<-')(a)),
-              inlog=tracewrap_log, outlog=tracewrap_log):
+              inlog=default_log, outlog=default_log):
     """Decorator factory to log function inputs and outputs.
 
     First we have to do some setup to break doctest's fourth wall.
@@ -167,3 +171,32 @@ def tracewrap(infmt=lambda a: pformat(tuplabel('->')(a)),
             return ret
         return trace
     return tracer
+
+def null_tracewrap(infmt=None, inlog=None,
+                   outfmt=None, outlog=None):
+    """Calls tracewrap with, by default, null arguments.
+
+    If a format function is passed without a corresponding log function,
+    null_tracewrap will provide the default logger.
+
+    >>> import sys; sys.stderr = sys.stdout
+    >>> import deboogie; _ = reload(deboogie)
+    >>> from deboogie import *
+
+    >>> @null_tracewrap(outfmt=str)
+    ... def noise():
+    ...     return 'noise'
+    >>> ret = noise()
+    noise
+    >>> ret
+    'noise'
+    """
+    from itertools import chain
+    args = [(fmt if fmt else null_fmt if not log else pformat,
+             log if log else null_log if not fmt else default_log)
+            for fmt, log in ((infmt, inlog), (outfmt, outlog))]
+    kwtuples = zip(('infmt', 'inlog', 'outfmt', 'outlog'),
+                   chain(*args))
+    # filter out final Nones.
+    kwargs = dict((k, v) for k, v in kwtuples if v)
+    return tracewrap(**kwargs)
