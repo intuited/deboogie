@@ -89,6 +89,9 @@ def tuplabel(name, f=None):
 default_log = get_debug_logger('tracewrap')
 default_log.__name__ = 'default_log'
 
+stdout_log = get_debug_logger('tracewrap', strm=stdout)
+stdout_log.__name__ = 'stdout_log'
+
 def null_fmt(*a, **k):
     return None
 
