@@ -17,7 +17,8 @@ def get_debug_logger(name, strm=None):
     >>> debug('Git yer gittin it on on and boogie!')
     Git yer gittin it on on and boogie!
     >>> debug.pp(debug.__dict__)  # doctest: +ELLIPSIS
-    { 'handler': <logging.StreamHandler instance at 0x...>,
+    { 'handler': <logging.StreamHandler object at 0x...>,
+      'logger': <logging.Logger object at 0x...>,
       'pp': <function <lambda> at 0x...>}
 
     Subsequent loggers do not issue duplicate output.
@@ -36,7 +37,7 @@ def get_debug_logger(name, strm=None):
     debug = lambda *args, **kwargs: logger.debug(*args, **kwargs)
     debug.logger = logger
 
-    handler = StreamHandler(strm=strm)
+    handler = StreamHandler(stream=strm)
     logger.addHandler(handler)
     debug.handler = handler
 
